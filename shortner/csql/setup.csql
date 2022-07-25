@@ -1,0 +1,13 @@
+CREATE KEYSPACE IF NOT EXISTS shorturl WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : '1' };
+
+-- Create a table
+CREATE TABLE IF NOT EXISTS shorturl.shorturl (
+shortkey text PRIMARY KEY,
+original_url text,
+CreatedAt timestamp
+);
+
+-- Insert some data
+INSERT INTO shorturl.shorturl
+(shortkey, original_url, CreatedAt)
+VALUES ('abcdefgh', 'https://google.com', toTimeStamp(now()));
