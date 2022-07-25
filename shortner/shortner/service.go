@@ -3,9 +3,11 @@ package shortner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 	"url-shortner/lib"
 
+	"github.com/go-redis/redis/v9"
 	"github.com/gocql/gocql"
 	"github.com/nats-io/nats.go"
 )
@@ -18,16 +20,31 @@ type ShortUrlService interface {
 type shortUrlService struct {
 	cassa    *gocql.Session
 	natsConn *nats.Conn
+	redis    *redis.Client
+	cache    ShortnerCache
 }
 
 func (s *shortUrlService) GetUrl(ctx context.Context, shortkey string) (string, error) {
-	// url, err := GetUrlFromDb(ctx, shortUrl)
-	// if err != nil {
-	// 	return "", err
-	// }
-	original_url := ""
-	s.cassa.Query("SELECT original_url FROM shorturl WHERE shortkey = ?", shortkey).Scan(&original_url)
-	return original_url, nil
+	original_url, err := s.cache.GetUrl(ctx, shortkey)
+	if err == nil && original_url != "" {
+		// fmt.Println("Cache hit")
+		return original_url, nil
+	} else {
+		if err != nil {
+			// fmt.Println(err.Error())
+		}
+		// fmt.Println("Cache miss")
+		s.cassa.Query("SELECT original_url FROM shorturl WHERE shortkey = ?", shortkey).Scan(&original_url)
+		if original_url != "" {
+			err := s.cache.SetUrl(ctx, shortkey, original_url)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			return original_url, nil
+		} else {
+			return "", errors.New("Not found")
+		}
+	}
 }
 
 func (s *shortUrlService) CreateUrl(ctx context.Context, shortUrl ShortUrl) (ShortUrl, error) {
@@ -66,7 +83,8 @@ func (s *shortUrlService) getShortKeyFromKGS(url string, shortKey chan string, e
 		shortKey <- string(msg.Data)
 	}
 }
-func NewShortnerService(cassa *gocql.Session, natsCon *nats.Conn) ShortUrlService {
-	s := shortUrlService{cassa: cassa, natsConn: natsCon}
+func NewShortnerService(cassa *gocql.Session, natsCon *nats.Conn, redis *redis.Client) ShortUrlService {
+	cache := NewShortnerCache(redis)
+	s := shortUrlService{cassa: cassa, natsConn: natsCon, redis: redis, cache: cache}
 	return &s
 }

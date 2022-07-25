@@ -1,48 +1,11 @@
 version: "3.8"
-services: 
-  app:
-    # It'll build the Dockerfile in the project root
-    # In production we can also just build and push image to the docker hub and give here repository url instead. 
-    # Ex. for github packages - image: ghcr.io/mmorejon/cinema-website:v2.1.2
-    build: "."
-    env_file:
-      - .env.docker
+services:
+  redis:
+    image: redis:7.0.4
+    environment:
+      - REDIS_PASSWORD=redis
+      - REDIS_PORT=6379
+      - REDIS_HOST=redis
     ports:
-      # Exposes the port TODAPP_APP_PORT from a container and binds it to a random port
-      # If we want to use replica sets- deploy replicas more than 1 then give - "${TODAPP_APP_PORT}" - so it would bind internal port to a random port on host 
-      - "${TODAPP_APP_PORT}"
-    restart: "always"
-    networks:
-      - "tod.net"
-    deploy:
-      replicas: 1
-    labels:
-        # Use these lables to selectively expose applications to traefik load balancing
-        # Traefik will check these labels and automatically load balance. note the name `app` after routers and services. This should be same as our docker service name in this case `app`
-      - "traefik.http.routers.app.rule=PathPrefix(`/`)"
-      - "traefik.http.services.app.loadbalancer.server.port=${TODAPP_APP_PORT}" 
-  proxy:
-    image: traefik:v2.4.2
-    command:
-      - "--api=true"
-      - "--api.dashboard=true"
-      - "--api.insecure=true"  # Don't do that in production
-      - "--providers.docker"
-      - "--entrypoints.web.address=:8083" # Public accessible port - SHould be 80 on server. 
-    volumes:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-        read_only: true
-    ports:
-      - target: 8083 # Same as we gave in web.address above
-        published: 8083  # Same as we gave in web.address above
-        protocol: tcp
-        mode: host
-      - "8080:8080"  # Traefik Dashboard port
-    depends_on:
-      - app
-    networks:
-      - "tod.net"
-networks:
-  tod.net:  
+      - "6379:6379"
+ 
