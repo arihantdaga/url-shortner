@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 	config "url-shortner-keygen/config"
+	"url-shortner-keygen/database"
 	keygen "url-shortner-keygen/keygen"
 	queue "url-shortner-keygen/queue"
 )
@@ -33,7 +35,25 @@ func run() error {
 	} else {
 		defer natsConn.Close()
 	}
-	keygenService := keygen.NewKeygenService(natsConn)
+	// cassaUri := config.Get("CASSA_URI").(string)
+	// cassSess, err := database.NewCasDb(cassaUri)
+	// if err != nil {
+	// 	log.Println("Error connecting to database:", err)
+	// 	return err
+	// } else {
+	// 	defer cassSess.Close()
+	// }
+	pgUri := config.Get("PG_URI").(string)
+	pgCon, err := database.NewPgDb(pgUri)
+	if err != nil {
+		log.Println("Error connecting to database:", err)
+		return err
+	} else {
+		defer pgCon.Close(context.Background())
+	}
+
+	keygenService := keygen.NewKeygenService(natsConn, pgCon)
+	// keygenService.InsertKeys(context.TODO(), 20000)
 	keygen.Subscriber(natsConn, keygenService)
 
 	// Run forever
