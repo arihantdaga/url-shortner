@@ -7,7 +7,3 @@ original_url text,
 CreatedAt timestamp
 );
 
--- Insert some data
-INSERT INTO shorturl.shorturl
-(shortkey, original_url, CreatedAt)
-VALUES ('abcdefgh', 'https://google.com', toTimeStamp(now()));
