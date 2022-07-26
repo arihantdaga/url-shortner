@@ -9,18 +9,18 @@ import (
 )
 
 func Routes(router fiber.Router, service ShortUrlService) {
-	rtr := router.Group("/urls")
-	rtr.Get("/:url", func(c *fiber.Ctx) error {
+	apirouter := router.Group("/api/v1/urls")
+	router.Get("/:url", func(c *fiber.Ctx) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
-
-		// var noteFilters NoteFilters
-		// c.QueryParser(&noteFilters)
-		// notes, err := service.Getnotes(ctx, noteFilters)
 		url, err := service.GetUrl(ctx, c.Params("url"))
-		return response(url, http.StatusOK, err, c)
+		if err != nil {
+			return response(nil, http.StatusBadRequest, err, c)
+		}
+		return c.Redirect(url, http.StatusFound)
+
 	})
-	rtr.Post("/", func(c *fiber.Ctx) error {
+	apirouter.Post("/", func(c *fiber.Ctx) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 		var shortUrl ShortUrl
@@ -32,7 +32,6 @@ func Routes(router fiber.Router, service ShortUrlService) {
 		} else {
 			return response(shortUrlRes, http.StatusOK, err, c)
 		}
-
 	})
 }
 

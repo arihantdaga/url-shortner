@@ -57,10 +57,7 @@ func run() error {
 	}
 
 	app := fiber.New()
-	api := app.Group("/api")
-	// authRoute := app.Group("/auth")
-	apiv1 := api.Group("/v1")
-	shortner.Routes(apiv1, shortner.NewShortnerService(cassSess, natsConn, redisClient))
+	shortner.Routes(app, shortner.NewShortnerService(cassSess, natsConn, redisClient))
 
 	// Setup Auth
 	// auth.Routes(authRoute, auth.NewAuthService(dbClient))
