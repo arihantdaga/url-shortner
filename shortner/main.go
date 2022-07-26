@@ -50,11 +50,17 @@ func run() error {
 		defer natsConn.Close()
 	}
 
+	redisClient, err := database.NewRedis(config.Get("REDIS_URI").(string), config.Get("REDIS_PASS").(string))
+	if err != nil {
+		log.Println("Error connecting to redis:", err)
+		return err
+	}
+
 	app := fiber.New()
 	api := app.Group("/api")
 	// authRoute := app.Group("/auth")
 	apiv1 := api.Group("/v1")
-	shortner.Routes(apiv1, shortner.NewShortnerService(cassSess, natsConn))
+	shortner.Routes(apiv1, shortner.NewShortnerService(cassSess, natsConn, redisClient))
 
 	// Setup Auth
 	// auth.Routes(authRoute, auth.NewAuthService(dbClient))

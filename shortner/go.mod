@@ -3,6 +3,7 @@ module url-shortner
 go 1.16
 
 require (
+	github.com/go-redis/redis/v9 v9.0.0-beta.1
 	github.com/gocql/gocql v1.1.0
 	github.com/gofiber/fiber/v2 v2.35.0
 	github.com/golang-jwt/jwt/v4 v4.4.2
